@@ -1,1 +1,1 @@
-# apache 2 virtual host and git repo creator #
+# Apache 2 virtual host and git repo creator #
