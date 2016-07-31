@@ -13,7 +13,7 @@ def _get_path(path):
 def _get_public_path(path, enable_public_path=False):
     if enable_public_path:
         if path == '':
-            return ''
+            return os.sep
 
         return path.rstrip(os.sep).rstrip(os.altsep) + os.sep
 
