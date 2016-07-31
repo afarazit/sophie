@@ -78,7 +78,7 @@ class Sophie:
 
         if self.enable_git_creation:
             replacements = {
-                '{vhost_path}': _get_path(self.http_www_path) + self.repo + os.sep + _get_path(self.git_checkout_path),
+                '{vhost_path}': _get_path(self.http_www_path) + os.sep + _get_path(self.git_checkout_path),
                 '{vhost_repo_path}': _get_path(self.git_repo_base_path) + self.repo}
             self.create_repo_dir()
             self.create_repo_conf(replacements)
