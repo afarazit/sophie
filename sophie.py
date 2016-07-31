@@ -7,7 +7,7 @@ enable_git_creation = True
 enable_chown = False
 
 http_conf_folder = 'c:/Users/afarazit/temp/a2conf/'  # ex. /etc/apache2/conf-available/, web server config directory
-http_conf_tpl = 'c:/Users/afarazit/temp/a2vhost.tpl'  # ex. /etc/apache2/conf-available/vhost.tpl, config template file
+http_conf_tpl = 'c:/Users/afarazit/temp/vhost.tpl'  # ex. /etc/apache2/conf-available/vhost.tpl, config template file
 http_www_path = 'c:/Users/afarazit/temp/var_www/'  # ex. /var/www/
 
 # ex. public_html/ or public_html/public,
