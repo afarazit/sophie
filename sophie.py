@@ -168,7 +168,8 @@ class Sophie:
             print("\t%s" % base_path)
             create_dir(base_path)
 
-        vhost_path = _get_path(self.http_www_path) + self.vhost
+        vhost_path = _get_path(self.http_www_path) + self.vhost + _get_public_path(
+            self.http_public_path, self.enable_public_path)
         print("\t%s" % vhost_path)
         create_dir(vhost_path)
 
