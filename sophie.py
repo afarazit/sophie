@@ -96,7 +96,7 @@ class Sophie:
         self.enable_chown = config.getboolean('tools', 'enable_chown')
 
         self.http_conf_folder = config.get('paths',
-                                           'http_conf_folder')  # ex. /etc/apache2/conf-available/, web server config directory
+                                           'http_conf_folder')  # ex. /etc/apache2/sites-available/, web server config directory
         self.http_conf_tpl = config.get('paths',
                                         'http_conf_tpl')  # ex. /etc/apache2/conf-available/vhost.tpl, config template file
         self.http_www_path = config.get('paths', 'http_www_path')  # ex. /var/www/
