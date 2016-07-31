@@ -210,8 +210,8 @@ class Sophie:
                 outfile.write(line)
 
         if os.name == 'posix':
-            stat = os.stat(post_receive_file)
-            os.chmod(post_receive_file, stat.st_mode | stat.S_IEXEC)
+            stat_result = os.stat(post_receive_file)
+            os.chmod(post_receive_file, stat_result.st_mode | stat_result.S_IEXEC)
 
 
 sophie = Sophie()
