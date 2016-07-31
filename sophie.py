@@ -41,7 +41,7 @@ class Sophie:
         #     exit('Web server config folder \"%s\" does not exists.' % self.http_conf_folder)
 
         if len(sys.argv) > 1:
-            if '-help' == sys.argv[1]:
+            if '-help' == sys.argv[1] or '--help' == sys.argv[1]:
                 exit('\nUsage: `sophie.py my_new_virtual_host.com`\n\n'
                      'Public path is per host, use -p to enable it, for example\n'
                      '`sophie.py new_new_virtual_host.com -p`\n'
