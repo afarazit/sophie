@@ -195,18 +195,23 @@ class Sophie:
         # print("\t%s" % repo_path + os.sep + 'hooks')
         # create_dir(repo_path + os.sep + 'hooks')
         output = subprocess.check_output([self.git_executable + ' init --bare ' + repo_path],
-                                   stderr=subprocess.PIPE,
-                                   shell=True)
-        print(str(output).replace("/\\n'",'').replace("b'",""))
+                                         stderr=subprocess.PIPE,
+                                         shell=True)
+        print(str(output).replace("/\\n'", '').replace("b'", ""))
 
     def create_repo_conf(self, replacements):
         print("Copying hook post-receive.")
         hooks_path = _get_path(self.git_repo_base_path) + self.repo + os.sep + 'hooks' + os.sep
-        with open(self.git_repo_conf_tpl) as infile, open(hooks_path + 'post-receive', 'w') as outfile:
+        post_receive_file = hooks_path + 'post-receive'
+        with open(self.git_repo_conf_tpl) as infile, open(post_receive_file, 'w') as outfile:
             for line in infile:
                 for src, target in replacements.items():
                     line = line.replace(src, target)
                 outfile.write(line)
+
+        if os.name == 'posix':
+            stat = os.stat(post_receive_file)
+            os.chmod(post_receive_file, stat.st_mode | stat.S_IEXEC)
 
 
 sophie = Sophie()
