@@ -191,7 +191,6 @@ class Sophie:
         print("\t%s" % repo_path)
         create_dir(repo_path)
 
-        # TODO this should be created via git init --bare
         # print("\t%s" % repo_path + os.sep + 'hooks')
         # create_dir(repo_path + os.sep + 'hooks')
         output = subprocess.check_output([self.git_executable + ' init --bare ' + repo_path],
@@ -210,8 +209,8 @@ class Sophie:
                 outfile.write(line)
 
         if os.name == 'posix':
-            stat_result = os.stat(post_receive_file)
-            os.chmod(post_receive_file, stat_result.st_mode | stat_result.S_IEXEC)
+            st = os.stat(post_receive_file)
+            os.chmod(post_receive_file, st.st_mode | st.S_IEXEC)
 
 
 sophie = Sophie()
