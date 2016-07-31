@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import sys
 import os
+import sys
+import stat
 import subprocess
 from configparser import ConfigParser
 
@@ -210,7 +211,7 @@ class Sophie:
 
         if os.name == 'posix':
             st = os.stat(post_receive_file)
-            os.chmod(post_receive_file, st.st_mode | st.S_IEXEC)
+            os.chmod(post_receive_file, st.st_mode | stat.S_IEXEC)
 
 
 sophie = Sophie()
