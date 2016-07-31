@@ -6,6 +6,7 @@ http_www_path = '/var/www/'  # ex. /var/www/
 # ex. public_html/ or public_html/public,
 # the final path would be /var/www/{vhost_name}/public_html
 # or /var/www/{vhost_name}/public_html/public
+# it can be empty
 http_public_path = ''
 
 git_repo_base_path = '/var/repos/'  # ex. /var/repos/
