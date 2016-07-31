@@ -2,7 +2,6 @@ import sys
 import os
 import subprocess
 from configparser import ConfigParser
-from argparse import ArgumentParser
 
 
 def _get_path(path):
@@ -71,7 +70,7 @@ class Sophie:
                             '{vhost_document_root}': _get_path(
                                 self.http_www_path) + self.vhost + os.sep + _get_public_path(
                                 self.http_public_path, self.enable_public_path)}
-            self.create_vhost_dir()
+            self.create_vhost_www()
             self.create_vhost_conf(replacements)
 
         if self.enable_git_creation:
@@ -160,7 +159,7 @@ class Sophie:
         if self.enable_git_creation:
             return os.path.isdir(_get_path(self.git_repo_base_path) + self.repo)
 
-    def create_vhost_dir(self):
+    def create_vhost_www(self):
         print("Creating web server directories.")
         base_path = _get_path(self.http_www_path)
         if not os.path.exists(base_path):
@@ -190,11 +189,12 @@ class Sophie:
         create_dir(repo_path)
 
         # TODO this should be created via git init --bare
-        print("\t%s" % repo_path + os.sep + 'hooks')
-        create_dir(repo_path + os.sep + 'hooks')
-        # print(git_executable + 'init --bare ' + repo_path)
-        # process = subprocess.Popen([git_executable + ' init --bare ' + repo_path], stdout=subprocess.PIPE)
-        # test = process.communicate()[0]
+        # print("\t%s" % repo_path + os.sep + 'hooks')
+        # create_dir(repo_path + os.sep + 'hooks')
+        output = subprocess.check_output([self.git_executable + ' init --bare ' + repo_path],
+                                   stderr=subprocess.PIPE,
+                                   shell=True)
+        print(str(output).replace("/\\n'",'').replace("b'",""))
 
     def create_repo_conf(self, replacements):
         print("Copying hook post-receive.")
@@ -207,5 +207,4 @@ class Sophie:
 
 
 sophie = Sophie()
-
 sophie.run()
