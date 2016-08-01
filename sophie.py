@@ -61,7 +61,9 @@ class Sophie:
         # if self.vhost == '':
         #     exit('You must provide a vhost name.')
 
-        print('Hostname is %s' % self.vhost)
+        confirm = input('Hostname is %s, continue? (y/n)' % self.vhost)
+        if confirm != 'y':
+            exit()
 
         self._read_config()
         self._check_tpls_and_access()
