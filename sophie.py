@@ -3,7 +3,6 @@
 import os
 import sys
 import stat
-import argparse
 import subprocess
 from configparser import ConfigParser
 
@@ -29,208 +28,66 @@ def create_dir(directory):
         exit('Error creating directory \"%s\".\n%s' % (directory, str(e)))
 
 
-def _args():
-    parser = argparse.ArgumentParser(description='Sophie, automating virtual host and git (bare) repo creation')
-    parser.add_argument('hostname', help='The hostname.')
-    parser.add_argument('-p', '--with-public',
-                        help='This will append the public path to DocumentRoot of your virtual host config'
-                             'ex. DocumentRoot "/var/www/my_new_virtual_host.com/public".'
-                             'Public path can be set via the "http_public_path" config parameter', action='store_true')
-    parser.add_argument('-np', '--without-public', help='Do not append public path', action='store_false')
-    parser.add_argument('-g', '--with-git', help='Create git repo, can also be set via the "enable_git_creation" config'
-                                                 ' parameter', action='store_true')
-    parser.add_argument('-ng', '--without-git', help='Do not create git repo, can also be set via the "enable_git'
-                                                     'creation" config parameter', action='store_false')
-    parser.add_argument('-v', '--with-vhost', help='Create virtual host, can also be set via the "enable_vhost_creation'
-                                                   '" config parameter', action='store_true')
-    parser.add_argument('-nv', '--without-vhost', help='Do not create virtual host, can also be set via the "enable_'
-                                                       'vhost_creation" config parameter', action='store_false')
-    return parser.parse_args()
-
-
-class Http:
-    http_www_path = None
-    http_conf_folder = None
-    http_conf_tpl = None
-    http_public_path = None
-    enable_public_path = None
-
-    def __init__(self, vhost):
-        self.vhost = vhost
-
-    def run(self):
-
-        self._check_tpls_and_access()
-        self.check_if_exists()
-
-        replacements = {'{vhost}': self.vhost,
-                        '{vhost_document_root}': _get_path(
-                            Http.http_www_path) + self.vhost + os.sep + _get_public_path(
-                            Http.http_public_path, Http.enable_public_path)}
-        self.create_vhost_www()
-        self.create_vhost_conf(replacements)
-
-    def _check_tpls_and_access(self):
-        if not os.path.isfile(Http.http_conf_tpl):
-            vhost_na = input('Virtual host template file not found, use default? (y/n): ')
-            if vhost_na == 'y':
-                default_vhost = 'vhost.tpl'
-                if not os.path.isfile(default_vhost):
-                    exit('Default %s not found.' % default_vhost)
-                Http.http_conf_tpl = default_vhost
-            else:
-                exit('Update your config file.')
-
-        if not os.path.isdir(Http.http_www_path):
-            www_path_na = input(Http.http_www_path + ' does not exists, create it? (y/n): ')
-
-            if www_path_na == 'y':
-                create_dir(Http.http_www_path)
-            else:
-                exit('Update your config file (http_www_path).')
-
-    def check_if_exists(self):
-        www_vhost_dir = _get_path(Http.http_www_path) + self.vhost
-        if os.path.isdir(www_vhost_dir):
-            exit('Exiting, "%s" exists.' % www_vhost_dir)
-
-        www_vhost_conf = _get_path(Http.http_conf_folder) + self.vhost
-        if os.path.isfile(www_vhost_dir):
-            exit('Exiting, "%s" exists.' % www_vhost_conf)
-
-    def create_vhost_www(self):
-        print("Creating web server directories.")
-        base_path = _get_path(Http.http_www_path)
-        if not os.path.exists(base_path):
-            print("\t%s" % base_path)
-            create_dir(base_path)
-
-        vhost_path = _get_path(Http.http_www_path) + self.vhost + os.sep + _get_public_path(
-            Http.http_public_path, Http.enable_public_path)
-        print("\t%s" % vhost_path)
-        create_dir(vhost_path)
-
-    def create_vhost_conf(self, replacements):
-        with open(Http.http_conf_tpl) as infile, open(Http.http_conf_folder + self.vhost + '.conf', 'w+') as outfile:
-            for line in infile:
-                for src, target in replacements.items():
-                    line = line.replace(src, target)
-                outfile.write(line)
-
-
-class Git:
-    http_www_path = None
-    git_repo_base_path = None
-    git_repo_conf_tpl = None
-    git_checkout_path = None
-    git_executable = None
-
-    def __init__(self, vhost):
-        self.vhost = vhost
-        self.repo = vhost + '.git'
-        # self.git_repo_base_path = config.get('paths', 'git_repo_base_path')
-        # self.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')
-        # self.git_checkout_path = config.get('paths', 'git_checkout_path')
-        # self.git_executable = config.get('paths', 'git_executable')
-
-    def run(self):
-
-        self._check_tpls_and_access()
-        self.check_if_exists()
-
-        replacements = {
-            '{vhost_path}': _get_path(Git.http_www_path) + self.vhost + os.sep + _get_path(Git.git_checkout_path),
-            '{vhost_repo_path}': _get_path(Git.git_repo_base_path) + self.repo,
-            '{chown}': _get_path(Git.http_www_path) + self.vhost + os.sep}
-        self.create_repo_dir()
-        self.create_repo_conf(replacements)
-
-    def _check_tpls_and_access(self):
-        if not os.path.isfile(Git.git_repo_conf_tpl):
-            post_receive_na = input('Git post-receive template file not found, use default? (y/n): ')
-            if post_receive_na == 'y':
-                default_post_receive = 'post-receive.tpl'
-                if not os.path.isfile(default_post_receive):
-                    exit('Default %s not found.' % default_post_receive)
-                self.git_repo_conf_tpl = default_post_receive
-            else:
-                exit('Update your config file.')
-
-        if not os.path.isdir(Git.git_repo_base_path):
-            repo_base_na = input(Git.git_repo_base_path + ' does not exists, create it? (y/n): ')
-
-            if repo_base_na == 'y':
-                create_dir(Git.git_repo_base_path)
-            else:
-                exit('Update your config file (git_repo_base_path).')
-
-    def check_if_exists(self):
-        git_base_path = _get_path(Git.git_repo_base_path) + self.repo
-        if os.path.isdir(git_base_path):
-            exit('Exiting, "%s" exists.' % git_base_path)
-
-    def create_repo_dir(self):
-        print("Creating git directories.")
-        base_path = _get_path(Git.git_repo_base_path)
-        if not os.path.exists(base_path):
-            print("\t%s" % base_path)
-            create_dir(base_path)
-
-        repo_path = _get_path(Git.git_repo_base_path) + self.repo
-        print("\t%s" % repo_path)
-        create_dir(repo_path)
-
-        # print("\t%s" % repo_path + os.sep + 'hooks')
-        # create_dir(repo_path + os.sep + 'hooks')
-        output = subprocess.check_output([Git.git_executable + ' init --bare ' + repo_path],
-                                         stderr=subprocess.PIPE,
-                                         shell=True)
-        print(str(output).replace("/\\n'", '').replace("b'", ""))
-
-    def create_repo_conf(self, replacements):
-        print("Copying hook post-receive.")
-        hooks_path = _get_path(Git.git_repo_base_path) + self.repo + os.sep + 'hooks' + os.sep
-        post_receive_file = hooks_path + 'post-receive'
-        with open(Git.git_repo_conf_tpl) as infile, open(post_receive_file, 'w+') as outfile:
-            for line in infile:
-                for src, target in replacements.items():
-                    line = line.replace(src, target)
-                outfile.write(line)
-
-        if os.name == 'posix':
-            st = os.stat(post_receive_file)
-            os.chmod(post_receive_file, st.st_mode | stat.S_IEXEC)
-
-
 class Sophie:
     def __init__(self):
         self.vhost = ''
         self.repo = ''
-
-        self.args = None
+        self.enable_public_path = False
+        pass
 
     def run(self):
-        self.args = _args()
-        self._read_config()
+        # web server might not be install, we are exiting
+        # if not os.path.isdir(self.http_conf_folder):
+        #     exit('Web server config folder \"%s\" does not exists.' % self.http_conf_folder)
 
-        if self.enable_vhost_creation is False and self.enable_git_creation is False:
-            exit('It seems you do not want to create anything...')
+        if len(sys.argv) > 1:
+            if '-help' == sys.argv[1] or '--help' == sys.argv[1]:
+                exit('\nUsage: `sophie.py my_new_virtual_host.com`\n\n'
+                     'Public path is per host, use -p to enable it, for example\n'
+                     '`sophie.py new_new_virtual_host.com -p`\n'
+                     'This will append the public path to DocumentRoot of your virtual host config\n'
+                     'ex. DocumentRoot "/var/www/my_new_virtual_host.com/public"\n'
+                     'Public path can be set via the "http_public_path" config parameter')
+            self.vhost = sys.argv[1]
+        else:
+            self.vhost = input('Enter host name: ')
 
-        self.vhost = self.args.hostname
+        if len(sys.argv) > 2:
+            if sys.argv[2] == '-p':
+                self.enable_public_path = True
 
-        confirm = input('Hostname is %s, continue? (y/n): ' % self.vhost)
+        self.repo = self.vhost + '.git'
+
+        # if self.vhost == '':
+        #     exit('You must provide a vhost name.')
+
+        confirm = input('Hostname is %s, continue? (y/n)' % self.vhost)
         if confirm != 'y':
             exit()
 
+        self._read_config()
+        self._check_tpls_and_access()
+        if self.vhost_exists():
+            exit('Exiting, hostname already exists...')
+
         if self.enable_vhost_creation:
-            http = Http(vhost=self.vhost)
-            http.run()
+            replacements = {'{vhost}': self.vhost,
+                            '{vhost_document_root}': _get_path(
+                                self.http_www_path) + self.vhost + os.sep + _get_public_path(
+                                self.http_public_path, self.enable_public_path)}
+            self.create_vhost_www()
+            self.create_vhost_conf(replacements)
 
         if self.enable_git_creation:
-            git = Git(vhost=self.vhost)
-            git.run()
+            replacements = {
+                '{vhost_path}': _get_path(self.http_www_path) + self.vhost + os.sep + _get_path(self.git_checkout_path),
+                '{vhost_repo_path}': _get_path(self.git_repo_base_path) + self.repo,
+                '{chown}': _get_path(self.http_www_path) + self.vhost + os.sep}
+            self.create_repo_dir()
+            self.create_repo_conf(replacements)
 
     def _read_config(self):
+        print('Reading config file...')
         config_file = __file__.replace('.py', '.ini')
         if not os.path.isfile(config_file):
             exit(config_file + ' not found.')
@@ -241,44 +98,123 @@ class Sophie:
         self.enable_vhost_creation = config.getboolean('tools', 'enable_vhost_creation')
         self.enable_git_creation = config.getboolean('tools', 'enable_git_creation')
         self.enable_chown = config.getboolean('tools', 'enable_chown')
-        Http.enable_public_path = config.getboolean('tools', 'enable_public_path')
 
-        Http.http_conf_folder = config.get('paths',
+        self.http_conf_folder = config.get('paths',
                                            'http_conf_folder')  # ex. /etc/apache2/sites-available/, web server config directory
-        Http.http_conf_tpl = config.get('paths',
+        self.http_conf_tpl = config.get('paths',
                                         'http_conf_tpl')  # ex. /etc/apache2/conf-available/vhost.tpl, config template file
-
-        Http.http_www_path = Git.http_www_path = config.get('paths', 'http_www_path')  # ex. /var/www/
+        self.http_www_path = config.get('paths', 'http_www_path')  # ex. /var/www/
 
         # ex. public_html/ or public_html/public,
         # the final path would be /var/www/{vhost_name}/public_html
         # or /var/www/{vhost_name}/public_html/public
-        Http.http_public_path = config.get('paths', 'http_public_path')
+        self.http_public_path = config.get('paths', 'http_public_path')
 
-        Git.git_repo_base_path = config.get('paths', 'git_repo_base_path')  # ex. /var/repos/
-        Git.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')  # ex. /var/repos/post-receive.tpl
-        Git.git_checkout_path = config.get('paths',
-                                           'git_checkout_path')  # ex. public_html/, set this to your vhost root folder
+        self.git_repo_base_path = config.get('paths', 'git_repo_base_path')  # ex. /var/repos/
+        self.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')  # ex. /var/repos/post-receive.tpl
+        self.git_checkout_path = config.get('paths',
+                                            'git_checkout_path')  # ex. public_html/, set this to your vhost root folder
 
-        Git.git_executable = config.get('paths', 'git_executable')
+        self.git_executable = config.get('paths', 'git_executable')
 
-        if self.args.with_git:
-            self.enable_git_creation = True
+    def _check_tpls_and_access(self):
+        if not os.path.isfile(self.http_conf_tpl):
+            vhost_na = input('Virtual host template file not found, use default? (y/n): ')
+            if vhost_na == 'y':
+                default_vhost = 'vhost.tpl'
+                if not os.path.isfile(default_vhost):
+                    exit('Default %s not found.' % default_vhost)
+                self.http_conf_tpl = default_vhost
+            else:
+                exit('Update your config file.')
 
-        if self.args.without_git is False:
-            self.enable_git_creation = False
+        if not os.path.isfile(self.git_repo_conf_tpl):
+            post_receive_na = input('Git post-receive template file not found, use default? (y/n): ')
+            if post_receive_na == 'y':
+                default_post_receive = 'post-receive.tpl'
+                if not os.path.isfile(default_post_receive):
+                    exit('Default %s not found.' % default_post_receive)
+                self.git_repo_conf_tpl = default_post_receive
+            else:
+                exit('Update your config file.')
 
-        if self.args.with_public:
-            Http.enable_public_path = True
+        if not os.path.isdir(self.http_www_path):
+            www_path_na = input(self.http_www_path + ' does not exists, create it? (y/n): ')
 
-        if self.args.without_public is False:
-            Http.enable_public_path = False
+            if www_path_na == 'y':
+                create_dir(self.http_www_path)
+            else:
+                exit('Update your config file (http_www_path).')
 
-        if self.args.with_vhost is True:
-            self.enable_vhost_creation = True
+        if not os.path.isdir(self.git_repo_base_path):
+            repo_base_na = input(self.git_repo_base_path + ' does not exists, create it? (y/n): ')
 
-        if self.args.without_vhost is False:
-            self.enable_vhost_creation = False
+            if repo_base_na == 'y':
+                create_dir(self.git_repo_base_path)
+            else:
+                exit('Update your config file (git_repo_base_path).')
+
+    def vhost_exists(self):
+        if self.enable_vhost_creation and self.enable_git_creation:
+            return os.path.isfile(_get_path(self.http_conf_folder) + self.vhost) \
+                   or os.path.isdir(_get_path(self.git_repo_base_path) + self.repo)
+
+        if self.enable_vhost_creation:
+            return os.path.isfile(_get_path(self.http_conf_folder) + self.vhost)
+
+        if self.enable_git_creation:
+            return os.path.isdir(_get_path(self.git_repo_base_path) + self.repo)
+
+    def create_vhost_www(self):
+        print("Creating web server directories.")
+        base_path = _get_path(self.http_www_path)
+        if not os.path.exists(base_path):
+            print("\t%s" % base_path)
+            create_dir(base_path)
+
+        vhost_path = _get_path(self.http_www_path) + self.vhost + os.sep + _get_public_path(
+            self.http_public_path, self.enable_public_path)
+        print("\t%s" % vhost_path)
+        create_dir(vhost_path)
+
+    def create_vhost_conf(self, replacements):
+        with open(self.http_conf_tpl) as infile, open(self.http_conf_folder + self.vhost + '.conf', 'w') as outfile:
+            for line in infile:
+                for src, target in replacements.items():
+                    line = line.replace(src, target)
+                outfile.write(line)
+
+    def create_repo_dir(self):
+        print("Creating git directories.")
+        base_path = _get_path(self.git_repo_base_path)
+        if not os.path.exists(base_path):
+            print("\t%s" % base_path)
+            create_dir(base_path)
+
+        repo_path = _get_path(self.git_repo_base_path) + self.repo
+        print("\t%s" % repo_path)
+        create_dir(repo_path)
+
+        # print("\t%s" % repo_path + os.sep + 'hooks')
+        # create_dir(repo_path + os.sep + 'hooks')
+        output = subprocess.check_output([self.git_executable + ' init --bare ' + repo_path],
+                                         stderr=subprocess.PIPE,
+                                         shell=True)
+        print(str(output).replace("/\\n'", '').replace("b'", ""))
+
+    def create_repo_conf(self, replacements):
+        print("Copying hook post-receive.")
+        hooks_path = _get_path(self.git_repo_base_path) + self.repo + os.sep + 'hooks' + os.sep
+        post_receive_file = hooks_path + 'post-receive'
+        with open(self.git_repo_conf_tpl) as infile, open(post_receive_file, 'w') as outfile:
+            for line in infile:
+                for src, target in replacements.items():
+                    line = line.replace(src, target)
+                outfile.write(line)
+
+        if os.name == 'posix':
+            st = os.stat(post_receive_file)
+            os.chmod(post_receive_file, st.st_mode | stat.S_IEXEC)
 
 
 sophie = Sophie()
