@@ -1,4 +1,4 @@
-# Apache 2 virtual host and git repo creator #
+# Sophie, automating virtual host and git (bare) repo creation #
 
 
 Usage: `sophie.py my_new_virtual_host.com`
