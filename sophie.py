@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import stat
 import argparse
 import subprocess
@@ -35,16 +34,16 @@ def _args():
     parser.add_argument('-p', '--with-public',
                         help='This will append the public path to DocumentRoot of your virtual host config'
                              'ex. DocumentRoot "/var/www/my_new_virtual_host.com/public".'
-                             'Public path can be set via the "http_public_path" config parameter', action='store_true')
+                             'Public path can be set via the "http_document_root" config setting', action='store_true')
     parser.add_argument('-np', '--without-public', help='Do not append public path', action='store_false')
     parser.add_argument('-g', '--with-git', help='Create git repo, can also be set via the "enable_git_creation" config'
-                                                 ' parameter', action='store_true')
+                                                 ' setting', action='store_true')
     parser.add_argument('-ng', '--without-git', help='Do not create git repo, can also be set via the "enable_git'
-                                                     'creation" config parameter', action='store_false')
+                                                     'creation" config setting', action='store_false')
     parser.add_argument('-v', '--with-vhost', help='Create virtual host, can also be set via the "enable_vhost_creation'
-                                                   '" config parameter', action='store_true')
+                                                   '" config setting', action='store_true')
     parser.add_argument('-nv', '--without-vhost', help='Do not create virtual host, can also be set via the "enable_'
-                                                       'vhost_creation" config parameter', action='store_false')
+                                                       'vhost_creation" config setting', action='store_false')
     return parser.parse_args()
 
 
@@ -52,7 +51,7 @@ class Http:
     http_www_path = None
     http_conf_folder = None
     http_conf_tpl = None
-    http_public_path = None
+    http_document_root = None
     enable_public_path = None
 
     def __init__(self, vhost):
@@ -66,7 +65,7 @@ class Http:
         replacements = {'{vhost}': self.vhost,
                         '{vhost_document_root}': _get_path(
                             Http.http_www_path) + self.vhost + os.sep + _get_public_path(
-                            Http.http_public_path, Http.enable_public_path)}
+                            Http.http_document_root, Http.enable_public_path)}
         self.create_vhost_www()
         self.create_vhost_conf(replacements)
 
@@ -106,7 +105,7 @@ class Http:
             create_dir(base_path)
 
         vhost_path = _get_path(Http.http_www_path) + self.vhost + os.sep + _get_public_path(
-            Http.http_public_path, Http.enable_public_path)
+            Http.http_document_root, Http.enable_public_path)
         print("\t%s" % vhost_path)
         create_dir(vhost_path)
 
@@ -128,10 +127,6 @@ class Git:
     def __init__(self, vhost):
         self.vhost = vhost
         self.repo = vhost + '.git'
-        # self.git_repo_base_path = config.get('paths', 'git_repo_base_path')
-        # self.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')
-        # self.git_checkout_path = config.get('paths', 'git_checkout_path')
-        # self.git_executable = config.get('paths', 'git_executable')
 
     def run(self):
 
@@ -242,24 +237,13 @@ class Sophie:
         self.enable_git_creation = config.getboolean('tools', 'enable_git_creation')
         self.enable_chown = config.getboolean('tools', 'enable_chown')
         Http.enable_public_path = config.getboolean('tools', 'enable_public_path')
-
-        Http.http_conf_folder = config.get('paths',
-                                           'http_conf_folder')  # ex. /etc/apache2/sites-available/, web server config directory
-        Http.http_conf_tpl = config.get('paths',
-                                        'http_conf_tpl')  # ex. /etc/apache2/conf-available/vhost.tpl, config template file
-
-        Http.http_www_path = Git.http_www_path = config.get('paths', 'http_www_path')  # ex. /var/www/
-
-        # ex. public_html/ or public_html/public,
-        # the final path would be /var/www/{vhost_name}/public_html
-        # or /var/www/{vhost_name}/public_html/public
-        Http.http_public_path = config.get('paths', 'http_public_path')
-
-        Git.git_repo_base_path = config.get('paths', 'git_repo_base_path')  # ex. /var/repos/
-        Git.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')  # ex. /var/repos/post-receive.tpl
-        Git.git_checkout_path = config.get('paths',
-                                           'git_checkout_path')  # ex. public_html/, set this to your vhost root folder
-
+        Http.http_conf_folder = config.get('paths', 'http_conf_folder')
+        Http.http_conf_tpl = config.get('paths', 'http_conf_tpl')
+        Http.http_www_path = Git.http_www_path = config.get('paths', 'http_www_path')
+        Http.http_document_root = config.get('paths', 'http_document_root')
+        Git.git_repo_base_path = config.get('paths', 'git_repo_base_path')
+        Git.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')
+        Git.git_checkout_path = config.get('paths', 'git_checkout_path')
         Git.git_executable = config.get('paths', 'git_executable')
 
         if self.args.with_git:
