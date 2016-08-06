@@ -33,15 +33,15 @@ def _args():
     parser.add_argument('hostname', help='The hostname.')
     parser.add_argument('-p', '--with-public',
                         help='This will append the public path to DocumentRoot of your virtual host config'
-                             'ex. DocumentRoot "/var/www/my_new_virtual_host.com/public".'
+                             'ex. DocumentRoot "/var/www/{vhost_name}/public".'
                              'Public path can be set via the "http_document_root" config setting', action='store_true')
-    parser.add_argument('-np', '--without-public', help='Do not append public path', action='store_false')
     parser.add_argument('-g', '--with-git', help='Create git repo, can also be set via the "enable_git_creation" config'
                                                  ' setting', action='store_true')
-    parser.add_argument('-ng', '--without-git', help='Do not create git repo, can also be set via the "enable_git'
-                                                     'creation" config setting', action='store_false')
     parser.add_argument('-v', '--with-vhost', help='Create virtual host, can also be set via the "enable_vhost_creation'
                                                    '" config setting', action='store_true')
+    parser.add_argument('-np', '--without-public', help='Do not append public path', action='store_false')
+    parser.add_argument('-ng', '--without-git', help='Do not create git repo, can also be set via the "enable_git'
+                                                     'creation" config setting', action='store_false')
     parser.add_argument('-nv', '--without-vhost', help='Do not create virtual host, can also be set via the "enable_'
                                                        'vhost_creation" config setting', action='store_false')
     return parser.parse_args()
