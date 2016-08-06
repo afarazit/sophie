@@ -3,9 +3,6 @@
 Sophie automates the creation of virtual hosts and git repos
 
 ```
-#!bash
-
-
 $ ./sophie.py --help
 usage: sophie.py [-h] [-p] [-g] [-v] [-np] [-ng] [-nv] hostname
 
