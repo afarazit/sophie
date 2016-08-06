@@ -2,7 +2,10 @@
 
 Sophie automates the creation of virtual hosts and git repos
 
-<pre>
+```
+#!bash
+
+
 $ ./sophie.py --help
 usage: sophie.py [-h] [-p] [-g] [-v] [-np] [-ng] [-nv] hostname
 
@@ -27,4 +30,4 @@ optional arguments:
                         "enable_gitcreation" config setting
   -nv, --without-vhost  Do not create virtual host, can also be set via the
                         "enable_vhost_creation" config setting
-</pre>
+```
