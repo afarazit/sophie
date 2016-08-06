@@ -48,7 +48,7 @@ def _args():
 
 
 class Http:
-    http_www_path = None
+    http_server_root = None
     http_conf_folder = None
     http_conf_tpl = None
     http_document_root = None
@@ -64,7 +64,7 @@ class Http:
 
         replacements = {'{vhost}': self.vhost,
                         '{vhost_document_root}': _get_path(
-                            Http.http_www_path) + self.vhost + os.sep + _get_public_path(
+                            Http.http_server_root) + self.vhost + os.sep + _get_public_path(
                             Http.http_document_root, Http.enable_public_path)}
         self.create_vhost_www()
         self.create_vhost_conf(replacements)
@@ -80,16 +80,16 @@ class Http:
             else:
                 exit('Update your config file.')
 
-        if not os.path.isdir(Http.http_www_path):
-            www_path_na = input(Http.http_www_path + ' does not exists, create it? (y/n): ')
+        if not os.path.isdir(Http.http_server_root):
+            www_path_na = input(Http.http_server_root + ' does not exists, create it? (y/n): ')
 
             if www_path_na == 'y':
-                create_dir(Http.http_www_path)
+                create_dir(Http.http_server_root)
             else:
-                exit('Update your config file (http_www_path).')
+                exit('Update your config file (http_server_root).')
 
     def check_if_exists(self):
-        www_vhost_dir = _get_path(Http.http_www_path) + self.vhost
+        www_vhost_dir = _get_path(Http.http_server_root) + self.vhost
         if os.path.isdir(www_vhost_dir):
             exit('Exiting, "%s" exists.' % www_vhost_dir)
 
@@ -99,12 +99,12 @@ class Http:
 
     def create_vhost_www(self):
         print("Creating web server directories.")
-        base_path = _get_path(Http.http_www_path)
+        base_path = _get_path(Http.http_server_root)
         if not os.path.exists(base_path):
             print("\t%s" % base_path)
             create_dir(base_path)
 
-        vhost_path = _get_path(Http.http_www_path) + self.vhost + os.sep + _get_public_path(
+        vhost_path = _get_path(Http.http_server_root) + self.vhost + os.sep + _get_public_path(
             Http.http_document_root, Http.enable_public_path)
         print("\t%s" % vhost_path)
         create_dir(vhost_path)
@@ -239,7 +239,7 @@ class Sophie:
         Http.enable_public_path = config.getboolean('tools', 'enable_public_path')
         Http.http_conf_folder = config.get('paths', 'http_conf_folder')
         Http.http_conf_tpl = config.get('paths', 'http_conf_tpl')
-        Http.http_www_path = Git.http_www_path = config.get('paths', 'http_www_path')
+        Http.http_server_root = Git.http_www_path = config.get('paths', 'http_server_root')
         Http.http_document_root = config.get('paths', 'http_document_root')
         Git.git_repo_base_path = config.get('paths', 'git_repo_base_path')
         Git.git_repo_conf_tpl = config.get('paths', 'git_repo_conf_tpl')
